@@ -9,7 +9,17 @@ EMAIL_TOKEN_PATTERNS = [
     (r'\s*\.\s*', '.')
 ]
 
-def collapse_spelled_letters(s: str) -> str: # !works for only 5 single letter words
+def add_sentence_punctuation(s: str) -> str:
+       s = s.strip()
+       # Capitalize first letter
+       if s and s[0].islower():
+           s = s[0].upper() + s[1:]
+       # Add period at end if missing
+       if s and s[-1] not in '.!?':
+           s += '.'
+       return s
+
+def collapse_spelled_letters(s: str) -> str: # ! works for only 5 single letter words
     # Collapse sequences like 'g m a i l' -> 'gmail'
     tokens = s.split()
     out = []
