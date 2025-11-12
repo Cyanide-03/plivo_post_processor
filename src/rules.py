@@ -9,7 +9,7 @@ EMAIL_TOKEN_PATTERNS = [
     (r'\s*\.\s*', '.')
 ]
 
-def collapse_spelled_letters(s: str) -> str:
+def collapse_spelled_letters(s: str) -> str: # !works for only 5 single letter words
     # Collapse sequences like 'g m a i l' -> 'gmail'
     tokens = s.split()
     out = []
