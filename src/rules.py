@@ -10,29 +10,55 @@ EMAIL_TOKEN_PATTERNS = [
 ]
 
 def add_sentence_punctuation(s: str) -> str:
-       s = s.strip()
-       # Capitalize first letter
-       if s and s[0].islower():
-           s = s[0].upper() + s[1:]
-       # Add period at end if missing
-       if s and s[-1] not in '.!?':
-           s += '.'
-       return s
+    s = s.strip()
+    # Capitalize first letter
+    if s and s[0].islower():
+        s = s[0].upper() + s[1:]
+    # Add period at end if missing
+    if s[-1] not in '.!?,;':
+        s += '.'
 
-def collapse_spelled_letters(s: str) -> str: # ! works for only 5 single letter words
-    # Collapse sequences like 'g m a i l' -> 'gmail'
+    return s
+
+def collapse_spelled_letters(s: str) -> str:
+    """
+    Collapse sequences like 'g m a i l' -> 'gmail' or 'a b c' -> 'abc'.
+    Now works for ANY length sequence of 3+ single letters.
+    """
     tokens = s.split()
     out = []
     i = 0
+    
     while i < len(tokens):
-        # lookahead for sequences of single letters
-        if all(len(t)==1 for t in tokens[i:i+5]) and i+4 <= len(tokens):
-            out.append(''.join(tokens[i:i+5]))
-            i += 5
+        # Look ahead for consecutive single-letter tokens
+        j = i
+        while j < len(tokens) and len(tokens[j]) == 1 and tokens[j].isalpha():
+            j += 1
+        
+        # If we found 3+ consecutive single letters, collapse them
+        if j - i >= 3:
+            out.append(''.join(tokens[i:j]).lower())
+            i = j
         else:
             out.append(tokens[i])
             i += 1
+    
     return ' '.join(out)
+
+# def collapse_spelled_letters(s: str) -> str: # ! works for only 5 single letter words
+#     # Collapse sequences like 'g m a i l' -> 'gmail'
+#     tokens = s.split()
+#     out = []
+#     i = 0
+#     while i < len(tokens):
+#         # lookahead for sequences of single letters
+#         if all(len(t)==1 for t in tokens[i:i+5]) and i+4 <= len(tokens):
+#             out.append(''.join(tokens[i:i+5]))
+#             i += 5
+#         else:
+#             out.append(tokens[i])
+#             i += 1
+#     return ' '.join(out)
 
 def normalize_email_tokens(s: str) -> str:
     s2 = s
@@ -41,11 +67,16 @@ def normalize_email_tokens(s: str) -> str:
         s2 = re.sub(pat, rep, s2, flags=re.IGNORECASE)
     # remove spaces around @ and . inside emails
     s2 = re.sub(r'\s*([@\.])\s*', r'\1', s2)
+
+    # Handle common email domain patterns
+    s2 = re.sub(r'gmail\.com', 'gmail.com', s2, flags=re.IGNORECASE)
+    s2 = re.sub(r'yahoo\.com', 'yahoo.com', s2, flags=re.IGNORECASE)
+
     return s2
 
 # Numbers: handle 'double nine', 'triple zero', 'oh' for zero
 NUM_WORD = {
-    'zero':'0','oh':'0','one':'1','two':'2','three':'3','four':'4','five':'5',
+    'zero':'0','oh':'0','o':'0','one':'1','two':'2','three':'3','four':'4','five':'5',
     'six':'6','seven':'7','eight':'8','nine':'9'
 }
 
@@ -85,6 +116,18 @@ def normalize_numbers_spoken(s: str) -> str:
             out.append(tokens[i])
             i += 1
     return ' '.join(out)
+
+# "five lakh thirty thousand" → "530000"
+INDIAN_NUM_WORDS = {
+    'hundred': 100,
+    'thousand': 1000,
+    'lakh': 100000,
+    'lac': 100000,
+    'crore': 10000000,
+    'crores': 10000000,
+    'lakhs': 100000,
+    'lacs': 100000
+}
 
 def normalize_currency(s: str) -> str:
     # Replace 'rupees ...' preceding digits with ₹
